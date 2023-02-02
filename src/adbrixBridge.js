@@ -62,19 +62,19 @@ function sendOnDomContentLoaded(){
 //   }
 // }
 
-function sendClickEvent(actionType, actionId, actionArg){
+function sendOnClickEvent(actionType, actionId, actionArg){
   if(isAndroidBridgeAvailable()){
-    sendClickEventToAndroid(actionType, actionId, actionArg);
+    sendOnClickEventToAndroid(actionType, actionId, actionArg);
   }
   if(isIosBridgeAvailable()){
-    sendClickEventToIos(actionType, actionId, actionArg);
+    sendOnClickEventToIos(actionType, actionId, actionArg);
   }
 }
-function sendClickEventToAndroid(actionType, actionId, actionArg){
-  window.adbrixBridge.click(getActionData(actionType, actionId, actionArg));
+function sendOnClickEventToAndroid(actionType, actionId, actionArg){
+  window.adbrixBridge.onClick(getActionData(actionType, actionId, actionArg));
 }
-function sendClickEventToIos(actionType, actionId, actionArg){
-  window.webkit.messageHandlers.adbrixBridge.click.postMessage(getActionData(actionType, actionId, actionArg));
+function sendOnClickEventToIos(actionType, actionId, actionArg){
+  window.webkit.messageHandlers.adbrixBridge.onClick.postMessage(getActionData(actionType, actionId, actionArg));
 }
 /**
 System events
@@ -103,7 +103,7 @@ document.querySelectorAll('[data-action-id]').forEach((button) => {
   button.addEventListener('click', function(event) {
     console.log(`id: ${button.dataset.actionId}, type: ${button.dataset.actionType}, arguments: ${button.dataset.actionArg}`);
     var actionType = getActionType(button.dataset.actionType);
-    sendClickEvent(actionType, button.dataset.actionId, button.dataset.actionArg);
+    sendOnClickEvent(actionType, button.dataset.actionId, button.dataset.actionArg);
   })
 });
 
