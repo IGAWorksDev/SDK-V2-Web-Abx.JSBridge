@@ -71,52 +71,10 @@ function sendClickEvent(actionType, actionId, actionArg){
   }
 }
 function sendClickEventToAndroid(actionType, actionId, actionArg){
-  switch(actionType){
-    case ActionType.CLOSE:{
-      window.adbrixBridge.close(getActionData(actionId, actionArg));
-      break;
-    }
-    case ActionType.DEEPLINK_AND_CLOSE:{
-      window.adbrixBridge.deeplink_and_close(getActionData(actionId, actionArg));
-      break;
-    }
-    case ActionType.WEBLINK:{
-      window.adbrixBridge.weblink(getActionData(actionId, actionArg));
-      break;
-    }
-    case ActionType.WEBLINK_AND_CLOSE:{
-      window.adbrixBridge.weblink_and_close(getActionData(actionId, actionArg));
-      break;
-    }
-    case ActionType.DONT_SHOW_ME_TODAY_AND_CLOSE:{
-      window.adbrixBridge.dont_show_me_today_and_close(getActionData(actionId, actionArg));
-      break;
-    }
-  }
+  window.adbrixBridge.click(getActionData(actionType, actionId, actionArg));
 }
 function sendClickEventToIos(actionType, actionId, actionArg){
-  switch(actionType){
-    case ActionType.CLOSE:{
-      window.webkit.messageHandlers.adbrixBridge.close.postMessage(actionData);
-      break;
-    }
-    case ActionType.DEEPLINK_AND_CLOSE:{
-      window.webkit.messageHandlers.adbrixBridge.deeplink_and_close.postMessage(actionData);
-      break;
-    }
-    case ActionType.WEBLINK:{
-      window.webkit.messageHandlers.adbrixBridge.weblink.postMessage(actionData);
-      break;
-    }
-    case ActionType.WEBLINK_AND_CLOSE:{
-      window.webkit.messageHandlers.adbrixBridge.weblink_and_close.postMessage(actionData);
-      break;
-    }
-    case ActionType.DONT_SHOW_ME_TODAY_AND_CLOSE:{
-      window.webkit.messageHandlers.adbrixBridge.dont_show_me_today_and_close.postMessage(actionData);
-      break;
-    }
-  }
+  window.webkit.messageHandlers.adbrixBridge.click.postMessage(getActionData(actionType, actionId, actionArg));
 }
 /**
 System events
@@ -129,25 +87,25 @@ document.addEventListener("DOMContentLoaded", event => {
 //HTML로 DOM 트리를 만드는 게 완성되었을 뿐만 아니라 이미지, 스타일시트 같은 외부 자원도 모두 불러오는 것이 끝났을 때 발생합니다.
 window.addEventListener("load", event => {
     //이미지가 다 다운로드 되었는지 체크
+    var isAllImageDownloaded = true;
     document.querySelectorAll('[data-dfn-image]').forEach((img) => {
       var isImageLoaded = image.complete && image.naturalHeight !== 0;
+      isAllImageDownloaded = isAllImageDownloaded && isImageLoaded;
     });
-    if(isImageLoaded){
+    if(isAllImageDownloaded){
       sendOnLoadFinished();
     } else{
       sendOnLoadFailed();
     }
-    //버튼 이벤트 등록
-    document.querySelectorAll('[data-dfn-btn]').forEach((button) => {
-      button.setAttribute('href', '#');
-      button.addEventListener('click', function(event) {
-        console.log(`id: ${button.dataset.actionId}, type: ${button.dataset.actionType}, arguments: ${button.dataset.actionArg}`);
-        var actionType = getActionType(button.dataset.actionType);
-        sendClickEvent(actionType, button.dataset.actionId, button.dataset.actionArg);
-      })
-    });
 });
-
+//버튼 이벤트 등록
+document.querySelectorAll('[data-action-id]').forEach((button) => {
+  button.addEventListener('click', function(event) {
+    console.log(`id: ${button.dataset.actionId}, type: ${button.dataset.actionType}, arguments: ${button.dataset.actionArg}`);
+    var actionType = getActionType(button.dataset.actionType);
+    sendClickEvent(actionType, button.dataset.actionId, button.dataset.actionArg);
+  })
+});
 
 /**
 Constants
@@ -157,15 +115,31 @@ export default {
   ADBRIX_BRIDGE_NATIVE_JAVASCRIPT_BRIDGE: 'adbridBridge'
 };
 const ActionType{
-  CLOSE: 'close',
-  DEEPLINK_AND_CLOSE: 'deeplink_and_close',
-  WEBLINK: 'weblink',
-  WEBLINKT_AND_CLOSE: 'weblink_and_close',
-  DONT_SHOW_ME_TODAY_AND_CLOSE: 'dont_show_me_today_and_close'
+  CLOSE: 'c',
+  WEBLINK: 'w',
+  DEEPLINK_AND_CLOSE: 'd',
+  WEBLINK_AND_CLOSE: 'wc',
+  DONT_SHOW_ME_TODAY_AND_CLOSE: 'ds'
 }
 /**
 Utils
 **/
+function getActionData(action_type, action_id, action_arg){
+   var data = new Object();
+   data.action_type = action_type;
+   data.action_id = action_id;
+   data.action_arg = action_arg;
+   var jsonData = JSON.stringify(data);
+   return jsonData;
+}
+function getActionType(data){
+  if(data == ActionType.CLOSE) return "close";
+  else if(data == ActionType.DEEPLINK_AND_CLOSE) return "deeplink_and_close";
+  else if(data == ActionType.WEBLINK) return "weblink";
+  else if(data == ActionType.WEBLINK_AND_CLOSE) return "weblink_and_close";
+  else if(data == ActionType.DONT_SHOW_ME_TODAY_AND_CLOSE) return "dont_show_me_today_and_close";
+  else return return "close";
+}
 function isEmpty(str) {
   return (!str || str.length === 0 );
 }
@@ -190,19 +164,4 @@ function isIosBridgeAvailable(){
     console.log("No iOS APIs found.");
   }
   return result;
-}
-function getActionData(action_id, action_arg){
-   var data = new Object();
-   data.action_id = action_id;
-   data.action_arg = action_arg;
-   var jsonData = JSON.stringify(data);
-   return jsonData;
-}
-function getActionType(data){
-  if(data == ActionType.CLOSE) return ActionType.CLOSE;
-  else if(data == ActionType.DEEPLINK_AND_CLOSE) return ActionType.DEEPLINK_AND_CLOSE;
-  else if(data == ActionType.WEBLINK) return ActionType.WEBLINK;
-  else if(data == ActionType.WEBLINKT_AND_CLOSE) return ActionType.WEBLINKT_AND_CLOSE;
-  else if(data == ActionType.DONT_SHOW_ME_TODAY_AND_CLOSE) return ActionType.DONT_SHOW_ME_TODAY_AND_CLOSE;
-  else return return ActionType.CLOSE;
 }
